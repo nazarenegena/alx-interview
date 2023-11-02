@@ -3,59 +3,91 @@
 """
 import sys
 
-def is_safe(board, row, col):
-    """ Check if no queen can attack horizontally """
-    for i in range(col):
-        if board[row][i] == 1:
-            return False
 
-    """ Checking upper diagonal on the left """
-    for i, j in zip(range(row, -1, -1), range(col, -1, -1)):
-        if board[i][j] == 1:
-            return False
+soln = []
+"""list of possible solution to the N queens.
+"""
+n = 0
+"""chessboard size
+"""
+postn = None
+"""possible positions on the chessboard list
+"""
 
-    """ Checking lower diagonal on the left """
-    for i, j in zip(range(row, len(board), 1), range(col, -1, -1)):
-        if board[i][j] == 1:
-            return False
 
-    return True
-
-def solve_nqueens(N):
-    if N < 4:
-        print("N must be at least 4")
-        sys.exit(1)
-
-    board = [[0 for _ in range(N)] for _ in range(N)]
-
-    def solve(board, col):
-        if col >= N:
-            print_solution(board)
-            return True
-
-        for i in range(N):
-            if is_safe(board, i, col):
-                board[i][col] = 1
-                solve(board, col + 1)
-                board[i][col] = 0
-
-    solve(board, 0)
-
-def print_solution(board):
-    for row in board:
-        print(" ".join(["Q" if cell == 1 else "." for cell in row]))
-    print()
-
-if __name__ == "__main__":
+def getting_input():
+    """Retrieves & validates program's argument
+    """
+    global n
+    n = 0
     if len(sys.argv) != 2:
         print("Usage: nqueens N")
         sys.exit(1)
-
     try:
-        N = int(sys.argv[1])
-    except ValueError:
+        n = int(sys.argv[1])
+    except Exception:
         print("N must be a number")
         sys.exit(1)
+    if n < 4:
+        print("N must be at least 4")
+        sys.exit(1)
+    return n
 
-    solve_nqueens(N)
 
+def attack_mode(pos0, pos1):
+    """Checking the positions of two queens in attacking mode.
+    """
+    if (pos0[0] == pos1[0]) or (pos0[1] == pos1[1]):
+        return True
+    return abs(pos0[0] - pos1[0]) == abs(pos0[1] - pos1[1])
+
+
+def existing_group(grouping):
+    """Checking if a grouping exists in solution list.
+    """
+    global soln
+    for stn in soln:
+        i = 0
+        for stn_pos in stn:
+            for grp_pos in grouping:
+                if stn_pos[0] == grp_pos[0] and stn_pos[1] == grp_pos[1]:
+                    i += 1
+        if i == n:
+            return True
+    return False
+
+
+def building_soln(row, grouping):
+    """Building a solution for the n queens
+    """
+    global soln
+    global n
+    if row == n:
+        tmp0 = grouping.copy()
+        if not existing_group(tmp0):
+            soln.append(tmp0)
+    else:
+        for col in range(n):
+            a = (row * n) + col
+            matches = zip(list([postn[a]]) * len(grouping), grouping)
+            used_positions = map(lambda x: attack_mode(x[0], x[1]), matches)
+            grouping.append(postn[a].copy())
+            if not any(used_positions):
+                building_soln(row + 1, grouping)
+            grouping.pop(len(grouping) - 1)
+
+
+def getting_soln():
+    """Getting the solution for the given chessboard size.
+    """
+    global postn, n
+    postn = list(map(lambda x: [x // n, x % n], range(n ** 2)))
+    a = 0
+    grouping = []
+    building_soln(a, grouping)
+
+
+n = getting_input()
+getting_soln()
+for solution in soln:
+    print(solution)
